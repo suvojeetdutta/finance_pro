@@ -131,6 +131,17 @@ class ExpenseTrackerApp {
     }
     
     async handleLogin() {
+        // Check Supabase credentials first
+        if (!SUPABASE_URL || !SUPABASE_KEY) {
+            if (typeof setupSupabaseCredentials === 'function') {
+                setupSupabaseCredentials();
+            } else {
+                alert('Please enter Supabase credentials first. Click OK to set up.');
+                window.open('https://supabase.com/dashboard', '_blank');
+            }
+            return;
+        }
+        
         const mobile = document.getElementById('loginMobile').value.trim();
         const password = document.getElementById('loginPassword').value;
         
@@ -215,6 +226,17 @@ class ExpenseTrackerApp {
     }
     
     async handleSignup() {
+        // Check Supabase credentials first
+        if (!SUPABASE_URL || !SUPABASE_KEY) {
+            if (typeof setupSupabaseCredentials === 'function') {
+                setupSupabaseCredentials();
+            } else {
+                alert('Please enter Supabase credentials first. Click OK to set up.');
+                window.open('https://supabase.com/dashboard', '_blank');
+            }
+            return;
+        }
+        
         const mobile = document.getElementById('signupMobile').value.trim();
         const password = document.getElementById('signupPassword').value;
         const confirmPassword = document.getElementById('signupConfirmPassword').value;
