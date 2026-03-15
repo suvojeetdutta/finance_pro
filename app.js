@@ -90,16 +90,6 @@ class ExpenseTrackerApp {
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => this.logout());
         }
-        
-        // Supabase setup event
-        const setupSupabaseBtn = document.getElementById('setupSupabaseBtn');
-        if (setupSupabaseBtn) {
-            setupSupabaseBtn.addEventListener('click', () => {
-                if (typeof setupSupabaseCredentials === 'function') {
-                    setupSupabaseCredentials();
-                }
-            });
-        }
     }
     
     isLoggedIn() {
