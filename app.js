@@ -161,27 +161,22 @@ class ExpenseTrackerApp {
         this.setLoading('login', true);
         
         try {
-            // Check Supabase first, fallback to local
+            // Check Supabase first
             let user = null;
             let passwordMatch = false;
             
-            console.log('Checking Supabase:', typeof syncManager, SUPABASE_URL, SUPABASE_KEY);
+            console.log('Checking Supabase for user...');
+            const result = await syncManager.loginUser(mobile);
+            console.log('Login result:', result);
             
-            if (typeof syncManager !== 'undefined' && SUPABASE_URL && SUPABASE_KEY) {
-                console.log('Trying Supabase login...');
-                const result = await syncManager.loginUser(mobile);
-                console.log('Supabase result:', result);
-                if (result.success && result.user) {
-                    user = result.user;
-                    passwordMatch = this.verifyPassword(password, user.password_hash);
-                }
-            } else {
-                console.log('Supabase not configured, using local storage');
+            if (result.success && result.user) {
+                user = result.user;
+                passwordMatch = this.verifyPassword(password, user.password_hash);
             }
             
-            // Fallback to localStorage if Supabase not available
+            // Fallback to localStorage if not found in Supabase
             if (!user) {
-                console.log('Checking local storage...');
+                console.log('User not found in Supabase, checking local...');
                 user = this.findUser(mobile);
                 if (user) {
                     passwordMatch = this.verifyPassword(password, user.password);
@@ -267,10 +262,13 @@ class ExpenseTrackerApp {
         this.setLoading('signup', true);
         
         try {
-            // Check if user already exists
-            const existingUser = this.findUser(mobile);
-            if (existingUser) {
-                throw new Error('Mobile number already registered');
+            // Try to check if user exists in Supabase first
+            console.log('Checking Supabase for existing user...');
+            const loginResult = await syncManager.loginUser(mobile);
+            
+            if (loginResult.success && loginResult.user) {
+                // User exists in Supabase
+                throw new Error('Mobile number already registered in cloud. Please login.');
             }
             
             // Create user object
@@ -280,19 +278,20 @@ class ExpenseTrackerApp {
                 createdAt: new Date().toISOString()
             };
             
-            // Save to Supabase first
-            if (typeof syncManager !== 'undefined' && SUPABASE_URL && SUPABASE_KEY) {
-                console.log('Saving to Supabase...');
-                const result = await syncManager.signupUser(mobile, user.password);
-                console.log('Supabase signup result:', result);
-                if (!result.success) {
-                    console.log('Supabase signup note:', result.error);
+            // Save to Supabase
+            console.log('Creating user in Supabase...');
+            const signupResult = await syncManager.signupUser(mobile, user.password);
+            console.log('Signup result:', signupResult);
+            
+            if (!signupResult.success) {
+                // Check if it's a duplicate key error (user already exists)
+                if (signupResult.error && signupResult.error.includes('duplicate')) {
+                    throw new Error('Mobile number already registered in cloud.');
                 }
-            } else {
-                console.log('Supabase not configured, using local only');
+                console.log('Supabase signup note:', signupResult.error);
             }
             
-            // Save to localStorage as backup
+            // Also save to localStorage as backup
             this.saveUser(user);
             
             // Show success message
