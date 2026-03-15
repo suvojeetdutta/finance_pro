@@ -1,0 +1,5 @@
+config.js
+finance_pro_backup_*.json
+supabase_setup.sql
+01_jan_expenses.txt
+02_feb_expenses.txt

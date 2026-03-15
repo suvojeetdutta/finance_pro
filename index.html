@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FinancePro">
+    <meta name="theme-color" content="#6366f1">
+    <title>FinancePro - Expense Tracker</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    
+    <link rel="stylesheet" href="libs/inter.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="libs/fontawesome/all.min.css">
+    <script src="libs/chart.min.js"></script>
+    <style>
+        .item-actions { display: flex; gap: 8px; opacity: 0; transition: opacity 0.2s; }
+        .history-item:hover .item-actions { opacity: 1; }
+        .action-btn { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 4px; }
+        .edit-btn { color: var(--primary-color); }
+        .delete-btn { color: #ef4444; }
+        .action-btn:hover { background: rgba(0,0,0,0.05); }
+        .sync-indicator { display:flex; align-items:center; gap:8px; padding:10px 16px; border-radius:10px; font-size:0.8rem; font-weight:600; cursor:pointer; transition:all 0.3s; margin-bottom:8px; }
+        .sync-indicator span { white-space:nowrap; }
+        .sync-ok { color:#10b981; background:rgba(16,185,129,0.1); }
+        .sync-active { color:#6366f1; background:rgba(99,102,241,0.1); }
+        .sync-off { color:#94a3b8; background:rgba(148,163,184,0.1); }
+        .sync-pending { color:#f59e0b; background:rgba(245,158,11,0.1); }
+        .sync-err { color:#ef4444; background:rgba(239,68,68,0.1); }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <i class="fa-solid fa-wallet gradient-icon"></i>
+                <h2>Finance<span>Pro</span></h2>
+            </div>
+            
+            <ul class="nav-links">
+                <li class="active" data-view="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </li>
+                <li data-view="history">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>History</span>
+                </li>
+                <li data-view="budget">
+                    <i class="fa-solid fa-bullseye"></i>
+                    <span>Budgets</span>
+                </li>
+                <li data-view="income">
+                    <i class="fa-solid fa-money-bill-trend-up"></i>
+                    <span>Income</span>
+                </li>
+                <li data-view="insights">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Insights</span>
+                </li>
+                <li data-view="analytics">
+                    <i class="fa-solid fa-chart-bar"></i>
+                    <span>Analytics</span>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <div id="syncIndicator" class="sync-indicator sync-off" onclick="window.expenseApp && window.expenseApp.manualSync()" title="Click to sync now">
+                    <i class="fa-solid fa-cloud-slash"></i><span>Initializing…</span>
+                </div>
+                <div class="backup-actions">
+                    <button class="backup-btn" id="exportDataBtn" title="Export Backup">
+                        <i class="fa-solid fa-file-export"></i>
+                        <span>Export</span>
+                    </button>
+                    <button class="backup-btn" id="importDataBtn" title="Import Backup">
+                        <i class="fa-solid fa-file-import"></i>
+                        <span>Import</span>
+                    </button>
+                    <input type="file" id="importFile" hidden accept=".json">
+                </div>
+
+                <div class="theme-toggle" id="themeToggleBtn">
+                    <i class="fa-solid fa-moon"></i>
+                    <span>Dark Mode</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="greeting">
+                    <h1 id="pageTitle">Overview</h1>
+                    <p id="currentDateDisplay">Today is Loading...</p>
+                </div>
+                <div class="actions">
+                    <button class="btn btn-primary" id="openAddExpenseBtn">
+                        <i class="fa-solid fa-plus"></i> New Expense
+                    </button>
+                    <button class="btn btn-success" id="openAddIncomeBtn">
+                        <i class="fa-solid fa-hand-holding-dollar"></i> New Income
+                    </button>
+                </div>
+            </header>
+
+            <div class="view-container">
+                <!-- Dashboard View -->
+                <div id="dashboardView" class="view active">
+                    <div class="glass-card filters-card">
+                        <div class="filter-group">
+                            <label>Year</label>
+                            <select id="dashYearSelect"></select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Month</label>
+                            <select id="dashMonthSelect"></select>
+                        </div>
+                    </div>
+
+                    <div class="overview-cards">
+                        <div class="glass-card stat-card income-summary">
+                            <div class="stat-icon income-bg">
+                                <i class="fa-solid fa-money-bill-wave"></i>
+                            </div>
+                            <div class="stat-details">
+                                <p>Total Income</p>
+                                <h3 id="dashIncomeTotal"><span class="amount-hidden">₹***</span></h3>
+                                <button class="toggle-visibility" data-target="dashIncomeTotal"><i class="fa-regular fa-eye-slash"></i></button>
+                            </div>
+                        </div>
+                        <div class="glass-card stat-card balance-summary">
+                            <div class="stat-icon balance-bg">
+                                <i class="fa-solid fa-scale-balanced"></i>
+                            </div>
+                            <div class="stat-details">
+                                <p>Available Balance</p>
+                                <h3 id="dashBalanceTotal"><span class="amount-hidden">₹***</span></h3>
+                                <button class="toggle-visibility" data-target="dashBalanceTotal"><i class="fa-regular fa-eye-slash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overview-cards">
+                        <div class="glass-card stat-card">
+                            <div class="stat-icon need-bg">
+                                <i class="fa-solid fa-cart-shopping"></i>
+                            </div>
+                            <div class="stat-details">
+                                <p>Needs</p>
+                                <h3 id="dashNeedsTotal"><span class="amount-hidden">₹***</span></h3>
+                                <small id="dashNeedsPct">0% of total</small>
+                                <button class="toggle-visibility" data-target="dashNeedsTotal"><i class="fa-regular fa-eye-slash"></i></button>
+                            </div>
+                        </div>
+                        <div class="glass-card stat-card">
+                            <div class="stat-icon want-bg">
+                                <i class="fa-solid fa-gift"></i>
+                            </div>
+                            <div class="stat-details">
+                                <p>Wants</p>
+                                <h3 id="dashWantsTotal"><span class="amount-hidden">₹***</span></h3>
+                                <small id="dashWantsPct">0% of total</small>
+                                <button class="toggle-visibility" data-target="dashWantsTotal"><i class="fa-regular fa-eye-slash"></i></button>
+                            </div>
+                        </div>
+                        <div class="glass-card stat-card">
+                            <div class="stat-icon save-bg">
+                                <i class="fa-solid fa-piggy-bank"></i>
+                            </div>
+                            <div class="stat-details">
+                                <p>Savings</p>
+                                <h3 id="dashSavesTotal"><span class="amount-hidden">₹***</span></h3>
+                                <small id="dashSavesPct">0% of total</small>
+                                <button class="toggle-visibility" data-target="dashSavesTotal"><i class="fa-regular fa-eye-slash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-row">
+                        <div class="glass-card chart-wrapper">
+                            <h3>Fixed Expenses Per Month</h3>
+                            <div class="canvas-container">
+                                <canvas id="dashboardBarChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="glass-card chart-wrapper">
+                            <h3>Day-wise Expenses</h3>
+                            <div class="canvas-container">
+                                <canvas id="dashboardLineChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History View -->
+                <div id="historyView" class="view">
+                    <div class="glass-card filters-card">
+                        <div class="filter-group">
+                            <label>Year</label>
+                            <select id="historyYearSelect"></select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Month</label>
+                            <select id="historyMonthSelect"></select>
+                        </div>
+                    </div>
+                    
+                    <div class="history-list" id="historyListContainer">
+                        <!-- Populated dynamically -->
+                        <div class="empty-state">No expenses found for this month.</div>
+                    </div>
+                </div>
+
+                <!-- Budgets View -->
+                <div id="budgetView" class="view">
+                    <div class="glass-card filters-card">
+                        <div class="filter-group">
+                            <label>Year</label>
+                            <select id="budgetYearSelect"></select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Month</label>
+                            <select id="budgetMonthSelect"></select>
+                        </div>
+                    </div>
+                    <div class="overview-cards" id="budgetSummaryCards">
+                        <!-- Populated dynamically -->
+                    </div>
+                    <div class="glass-card header-card" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3>Budget Breakdown</h3>
+                            <p>Category-wise spending vs limits</p>
+                        </div>
+                        <button class="btn btn-primary" id="editBudgetsBtn"><i class="fa-solid fa-pen"></i> Edit Budgets</button>
+                    </div>
+                    <div id="budgetsListContainer" class="budgets-grid">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Income View -->
+                <div id="incomeView" class="view">
+                    <div class="glass-card filters-card">
+                        <div class="filter-group">
+                            <label>Year</label>
+                            <select id="incomeYearSelect"></select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Month</label>
+                            <select id="incomeMonthSelect"></select>
+                        </div>
+                    </div>
+                    <div class="overview-cards">
+                        <div class="glass-card stat-card income-summary">
+                            <div class="stat-icon income-bg">
+                                <i class="fa-solid fa-money-bill-wave"></i>
+                            </div>
+                            <div class="stat-details">
+                                <p>Total Income (<span id="incomeMonthLabel">Current</span>)</p>
+                                <h3 id="incomeTotalDisplay">₹0</h3>
+                            </div>
+                        </div>
+                        <div class="glass-card stat-card balance-summary">
+                            <div class="stat-icon balance-bg">
+                                <i class="fa-solid fa-scale-balanced"></i>
+                            </div>
+                            <div class="stat-details">
+                                <p>Net Balance</p>
+                                <h3 id="balanceTotalDisplay">₹0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-card">
+                        <h3>Income Records</h3>
+                        <div class="history-list" id="incomeListContainer">
+                             <div class="empty-state">No income records found.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insights View -->
+                <div id="insightsView" class="view">
+                    <div class="glass-card filters-card">
+                        <div class="filter-group">
+                            <label>Year</label>
+                            <select id="insightsYearSelect"></select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Month</label>
+                            <select id="insightsMonthSelect"></select>
+                        </div>
+                    </div>
+
+                    <div class="insights-row">
+                        <div class="glass-card chart-wrapper">
+                            <h3>Spending by Category</h3>
+                            <div class="canvas-container"><canvas id="insightsPieChart"></canvas></div>
+                        </div>
+                        <div class="glass-card" id="insightsMajorStats">
+                            <h3>Category Summary</h3>
+                            <div id="majorCatCards"></div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card" style="margin-bottom:1.5rem">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+                            <h3>Top Subcategories</h3>
+                            <select id="insightsSubFilter" style="padding:0.5rem;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary)">
+                                <option value="All">All</option>
+                                <option value="Need">Need</option>
+                                <option value="Want">Want</option>
+                                <option value="Save">Save</option>
+                            </select>
+                        </div>
+                        <div class="canvas-container" style="height:300px"><canvas id="insightsBarChart"></canvas></div>
+                    </div>
+
+                    <div class="overview-cards" id="fixedVsDailyCards"></div>
+
+                    <div class="glass-card" style="margin-bottom:1.5rem">
+                        <h3>Month-over-Month Comparison</h3>
+                        <div class="canvas-container" style="height:300px"><canvas id="insightsMoMChart"></canvas></div>
+                    </div>
+
+                    <div class="glass-card" style="margin-bottom:1.5rem">
+                        <h3>Top 10 Expenses</h3>
+                        <div class="insights-table-wrap">
+                            <table class="insights-table" id="topSpendersTable"></table>
+                        </div>
+                    </div>
+
+                    <div class="glass-card" style="margin-bottom:1.5rem">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+                            <h3>Category Trends</h3>
+                            <select id="insightsTrendCat" style="padding:0.5rem;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary)"></select>
+                        </div>
+                        <div class="canvas-container" style="height:280px"><canvas id="insightsTrendChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Analytics View -->
+                <div id="analyticsView" class="view">
+                    <div class="glass-card filters-card">
+                        <div class="filter-group">
+                            <label>Year</label>
+                            <select id="analyticsYearSelect"></select>
+                        </div>
+                    </div>
+
+                    <div class="overview-cards" id="yearSummaryCards"></div>
+
+                    <div class="glass-card" style="margin-bottom:1.5rem">
+                        <h3>Year-over-Year Comparison</h3>
+                        <div class="canvas-container" style="height:300px"><canvas id="analyticsYoYChart"></canvas></div>
+                    </div>
+
+                    <div class="glass-card" style="margin-bottom:1.5rem">
+                        <h3>Monthly Spending Trend</h3>
+                        <div class="canvas-container" style="height:300px"><canvas id="analyticsMonthlyChart"></canvas></div>
+                    </div>
+
+                    <div class="glass-card" style="margin-bottom:1.5rem">
+                        <h3>Yearly Category Breakdown</h3>
+                        <div class="canvas-container" style="height:300px"><canvas id="analyticsCategoryChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Modals -->
+        <div class="modal-overlay" id="budgetModal">
+            <div class="glass-modal">
+                <div class="modal-header">
+                    <h2><i class="fa-solid fa-pen"></i> Edit Budgets</h2>
+                    <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body" id="budgetEditList" style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
+                    <!-- Populated dynamically -->
+                </div>
+                <div style="padding-top:15px">
+                    <button class="btn btn-primary full-width" id="saveBudgetsBtn">Save Budgets</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="expenseModal">
+            <div class="glass-modal">
+                <div class="modal-header">
+                    <h2 id="expenseModalTitle"><i class="fa-solid fa-plus-circle"></i> Add Expense</h2>
+                    <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="expenseId">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="expenseDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Major Category</label>
+                        <select id="expenseMajor">
+                            <option value="Need">Need</option>
+                            <option value="Want">Want</option>
+                            <option value="Save">Save</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Expense Type</label>
+                        <select id="expenseType">
+                            <option value="Daily">Daywise (Recurring/Small)</option>
+                            <option value="Fixed">Fixed (EMI/Rent/Bills)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Subcategory</label>
+                        <select id="expenseSub"></select>
+                    </div>
+                    <div class="form-group hidden" id="customSubGroup">
+                        <label>New Subcategory Name</label>
+                        <input type="text" id="expenseCustomSub" placeholder="e.g. Gym Membership">
+                    </div>
+                    <div class="form-group">
+                        <label>Amount (₹)</label>
+                        <input type="number" id="expenseAmount" placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Description (Optional)</label>
+                        <input type="text" id="expenseDesc" placeholder="e.g. Starbucks coffee">
+                    </div>
+                    <button class="btn btn-primary full-width" id="saveExpenseBtn">Save Expense</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="incomeModal">
+            <div class="glass-modal">
+                <div class="modal-header">
+                    <h2 id="incomeModalTitle"><i class="fa-solid fa-hand-holding-dollar"></i> Add Income</h2>
+                    <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="incomeId">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="incomeDateInput">
+                    </div>
+                    <div class="form-group">
+                        <label>Income Type</label>
+                        <select id="incomeType">
+                            <option value="Salary">Salary</option>
+                            <option value="Bonus">Bonus</option>
+                            <option value="Freelance">Freelance</option>
+                            <option value="Investment">Investment Return</option>
+                            <option value="Gift">Gift</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Amount (₹)</label>
+                        <input type="number" id="incomeAmountInput" placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Description (Optional)</label>
+                        <input type="text" id="incomeDescInput" placeholder="e.g. January Salary">
+                    </div>
+                    <button class="btn btn-success full-width" id="saveIncomeBtn">Save Income</button>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Data source reference and app logic -->
+    <script src="data.js"></script>
+    <script src="config.js"></script>
+    <script src="sync.js"></script>
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW Registered'))
+                    .catch(err => console.log('SW Error:', err));
+            });
+        }
+    </script>
+</body>
+</html>
