@@ -1,40 +1,73 @@
 // sync.js — Supabase Cloud Sync for FinancePro
-// Credentials loaded from localStorage (first-time setup via pop-up)
+// Credentials loaded from localStorage (first-time setup via modal)
 // On first visit, users will be prompted to enter their Supabase URL and API key
 var SUPABASE_URL = localStorage.getItem('supabase_url') || '';
 var SUPABASE_KEY = localStorage.getItem('supabase_key') || '';
 
-// Function to setup Supabase credentials (called from UI)
-function setupSupabaseCredentials() {
-    const url = prompt('Sync Setup (1/2): Paste your Supabase Project URL:');
-    const key = prompt('Sync Setup (2/2): Paste your Supabase anon key:');
-    if (url && key) {
-        localStorage.setItem('supabase_url', url.trim());
-        localStorage.setItem('supabase_key', key.trim());
-        SUPABASE_URL = url.trim();
-        SUPABASE_KEY = key.trim();
-        alert('Supabase credentials saved! Please try again.');
-        location.reload();
-    } else {
-        alert('Please enter both URL and key.');
-    }
-}
+// Function to setup Supabase credentials - shows custom modal (works on mobile)
+function showSupabaseSetupModal() {
+    // Remove existing modal if any
+    const existing = document.getElementById('supabaseSetupModal');
+    if (existing) existing.remove();
 
-// Check if credentials exist, if not prompt on first visit
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-    setTimeout(() => {
-        const url = prompt('Sync Setup (1/2): Paste your Supabase Project URL (e.g., https://xxx.supabase.co):');
-        if (!url) { alert('Supabase URL is required for cloud sync.'); return; }
-        const key = prompt('Sync Setup (2/2): Paste your Supabase anon key:');
-        if (!key) { alert('Supabase key is required for cloud sync.'); return; }
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'supabaseSetupModal';
+    modal.innerHTML = `
+        <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:system-ui,sans-serif;">
+            <div style="background:white;border-radius:12px;padding:24px;max-width:400px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+                <h2 style="margin:0 0 16px 0;color:#333;font-size:20px;">☁️ Supabase Setup</h2>
+                <p style="color:#666;font-size:14px;margin:0 0 16px 0;">Enter your Supabase project details to enable cloud sync.</p>
+                
+                <label style="display:block;margin-bottom:8px;font-size:13px;color:#555;font-weight:500;">Project URL</label>
+                <input type="text" id="supabaseUrlInput" placeholder="https://xxx.supabase.co" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:16px;box-sizing:border-box;">
+                
+                <label style="display:block;margin-bottom:8px;font-size:13px;color:#555;font-weight:500;">Anon Key</label>
+                <input type="text" id="supabaseKeyInput" placeholder="eyJhbGci..." style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:20px;box-sizing:border-box;">
+                
+                <button id="saveSupabaseCreds" style="width:100%;padding:14px;background:#6366f1;color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">Save & Continue</button>
+                
+                <p style="text-align:center;margin:16px 0 0 0;font-size:12px;color:#999;">Get these from Supabase Dashboard → Settings → API</p>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Handle save
+    document.getElementById('saveSupabaseCreds').onclick = function() {
+        const url = document.getElementById('supabaseUrlInput').value.trim();
+        const key = document.getElementById('supabaseKeyInput').value.trim();
         
-        localStorage.setItem('supabase_url', url.trim());
-        localStorage.setItem('supabase_key', key.trim());
-        SUPABASE_URL = url.trim();
-        SUPABASE_KEY = key.trim();
+        if (!url || !key) {
+            alert('Please enter both URL and key');
+            return;
+        }
+        
+        localStorage.setItem('supabase_url', url);
+        localStorage.setItem('supabase_key', key);
+        SUPABASE_URL = url;
+        SUPABASE_KEY = key;
+        
+        modal.remove();
         alert('Supabase credentials saved!');
         location.reload();
-    }, 1500);
+    };
+}
+
+// Legacy function for UI button
+function setupSupabaseCredentials() {
+    showSupabaseSetupModal();
+}
+
+// Check if credentials exist, if not show modal on first visit
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => setTimeout(showSupabaseSetupModal, 500));
+    } else {
+        setTimeout(showSupabaseSetupModal, 800);
+    }
 }
 
 class SyncManager {
