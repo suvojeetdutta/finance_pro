@@ -43,6 +43,21 @@ class SyncManager {
         window.addEventListener('offline', () => { this.online = false; this.updateIndicator('offline'); });
     }
 
+    // Get current user mobile from localStorage
+    getUserId() {
+        const currentUser = localStorage.getItem('currentUser');
+        if (currentUser) {
+            const user = JSON.parse(currentUser);
+            return user.mobile;
+        }
+        return null;
+    }
+
+    // Set current user (called after login)
+    setUserId(mobile) {
+        this.userId = mobile;
+    }
+
     get headers() {
         return {
             'apikey': SUPABASE_KEY,
@@ -111,8 +126,10 @@ class SyncManager {
     // ---- Push individual records ----
 
     async pushExpense(exp) {
+        const userId = this.getUserId();
+        if (!userId) { console.warn('No user logged in, skipping expense push'); return; }
         const row = {
-            id: exp.id, expense_date: exp.date, expense_type: exp.type || 'Daily',
+            id: exp.id, user_id: userId, expense_date: exp.date, expense_type: exp.type || 'Daily',
             major: exp.major, sub: exp.sub, amount: exp.amount,
             description: exp.desc || '', deleted: false, updated_at: new Date().toISOString()
         };
@@ -122,15 +139,19 @@ class SyncManager {
     }
 
     async softDeleteExpense(id) {
+        const userId = this.getUserId();
+        if (!userId) return;
         const patch = { deleted: true, updated_at: new Date().toISOString() };
-        if (!this.online) { this.queueOp('delete_expense', { id, ...patch }); return; }
-        try { await this.req('expenses', 'PATCH', patch, `?id=eq.${id}`); this.updateIndicator('synced'); }
-        catch (e) { this.queueOp('delete_expense', { id, ...patch }); }
+        if (!this.online) { this.queueOp('delete_expense', { id, userId, ...patch }); return; }
+        try { await this.req('expenses', 'PATCH', patch, `?id=eq.${id}&user_id=eq.${userId}`); this.updateIndicator('synced'); }
+        catch (e) { this.queueOp('delete_expense', { id, userId, ...patch }); }
     }
 
     async pushIncome(inc, monthKey) {
+        const userId = this.getUserId();
+        if (!userId) { console.warn('No user logged in, skipping income push'); return; }
         const row = {
-            id: String(inc.id), income_date: inc.date, income_type: inc.type,
+            id: String(inc.id), user_id: userId, income_date: inc.date, income_type: inc.type,
             amount: inc.amount, description: inc.desc || '', month_key: monthKey,
             deleted: false, updated_at: new Date().toISOString()
         };
@@ -140,15 +161,19 @@ class SyncManager {
     }
 
     async softDeleteIncome(id) {
+        const userId = this.getUserId();
+        if (!userId) return;
         const patch = { deleted: true, updated_at: new Date().toISOString() };
-        if (!this.online) { this.queueOp('delete_income', { id: String(id), ...patch }); return; }
-        try { await this.req('incomes', 'PATCH', patch, `?id=eq.${String(id)}`); this.updateIndicator('synced'); }
-        catch (e) { this.queueOp('delete_income', { id: String(id), ...patch }); }
+        if (!this.online) { this.queueOp('delete_income', { id: String(id), userId, ...patch }); return; }
+        try { await this.req('incomes', 'PATCH', patch, `?id=eq.${String(id)}&user_id=eq.${userId}`); this.updateIndicator('synced'); }
+        catch (e) { this.queueOp('delete_income', { id: String(id), userId, ...patch }); }
     }
 
     async pushBudgets(budgets) {
+        const userId = this.getUserId();
+        if (!userId) { console.warn('No user logged in, skipping budget push'); return; }
         const rows = Object.entries(budgets).map(([category, amount]) => ({
-            category, amount, updated_at: new Date().toISOString()
+            id: `${userId}_${category}`, user_id: userId, category, amount, updated_at: new Date().toISOString()
         }));
         if (!this.online || !rows.length) return;
         try { await this.req('budgets', 'POST', rows); this.updateIndicator('synced'); }
@@ -158,13 +183,15 @@ class SyncManager {
     // ---- Pull from cloud ----
 
     async pullAll() {
+        const userId = this.getUserId();
+        if (!userId) { console.warn('No user logged in, skipping pull'); return null; }
         if (!this.online) { this.updateIndicator('offline'); return null; }
         this.updateIndicator('syncing');
         try {
             const [expenses, incomes, budgets] = await Promise.all([
-                this.req('expenses', 'GET', null, '?deleted=eq.false&order=expense_date.asc'),
-                this.req('incomes', 'GET', null, '?deleted=eq.false&order=income_date.asc'),
-                this.req('budgets')
+                this.req('expenses', 'GET', null, `?user_id=eq.${userId}&deleted=eq.false&order=expense_date.asc`),
+                this.req('incomes', 'GET', null, `?user_id=eq.${userId}&deleted=eq.false&order=income_date.asc`),
+                this.req('budgets', 'GET', null, `?user_id=eq.${userId}`)
             ]);
             this.updateIndicator('synced');
             return { expenses, incomes, budgets };
@@ -178,13 +205,15 @@ class SyncManager {
     // ---- Initial seed: push all local data to cloud ----
 
     async pushAll(expenses, incomes, budgets) {
+        const userId = this.getUserId();
+        if (!userId) { console.warn('No user logged in, skipping pushAll'); return; }
         if (!this.online) return;
         this.updateIndicator('syncing');
         try {
             // Expenses in batches of 100
             if (expenses.length) {
                 const rows = expenses.map(e => ({
-                    id: e.id, expense_date: e.date, expense_type: e.type || 'Daily',
+                    id: e.id, user_id: userId, expense_date: e.date, expense_type: e.type || 'Daily',
                     major: e.major, sub: e.sub, amount: e.amount,
                     description: e.desc || '', deleted: false, updated_at: new Date().toISOString()
                 }));
@@ -195,7 +224,7 @@ class SyncManager {
             const incRows = [];
             Object.entries(incomes).forEach(([month, arr]) => {
                 if (Array.isArray(arr)) arr.forEach(inc => incRows.push({
-                    id: String(inc.id), income_date: inc.date, income_type: inc.type,
+                    id: String(inc.id), user_id: userId, income_date: inc.date, income_type: inc.type,
                     amount: inc.amount, description: inc.desc || '', month_key: month,
                     deleted: false, updated_at: new Date().toISOString()
                 }));
@@ -222,15 +251,16 @@ class SyncManager {
 
     async flushPending() {
         if (!this.pendingOps.length) return;
+        const userId = this.getUserId();
         const ops = [...this.pendingOps];
         this.pendingOps = [];
         localStorage.setItem('sync_pending', '[]');
         for (const op of ops) {
             try {
                 if (op.type === 'upsert_expense') await this.req('expenses', 'POST', [op.data]);
-                else if (op.type === 'delete_expense') await this.req('expenses', 'PATCH', { deleted: true, updated_at: op.data.updated_at }, `?id=eq.${op.data.id}`);
+                else if (op.type === 'delete_expense') await this.req('expenses', 'PATCH', { deleted: true, updated_at: op.data.updated_at }, `?id=eq.${op.data.id}&user_id=eq.${userId}`);
                 else if (op.type === 'upsert_income') await this.req('incomes', 'POST', [op.data]);
-                else if (op.type === 'delete_income') await this.req('incomes', 'PATCH', { deleted: true, updated_at: op.data.updated_at }, `?id=eq.${op.data.id}`);
+                else if (op.type === 'delete_income') await this.req('incomes', 'PATCH', { deleted: true, updated_at: op.data.updated_at }, `?id=eq.${op.data.id}&user_id=eq.${userId}`);
             } catch (e) { this.pendingOps.push(op); }
         }
         localStorage.setItem('sync_pending', JSON.stringify(this.pendingOps));

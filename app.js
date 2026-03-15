@@ -17,6 +17,12 @@ class ExpenseTrackerApp {
         // Check if user is already logged in
         if (this.isLoggedIn()) {
             this.currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            
+            // Set user ID in sync manager for Supabase user_id
+            if (typeof syncManager !== 'undefined' && this.currentUser) {
+                syncManager.setUserId(this.currentUser.mobile);
+            }
+            
             this.showApp();
             // Ensure data exists
             this.initData();
@@ -199,6 +205,11 @@ class ExpenseTrackerApp {
             localStorage.setItem('authToken', token);
             
             this.currentUser = { id: user.mobile, mobile: user.mobile };
+            
+            // Set user ID in sync manager for Supabase user_id
+            if (typeof syncManager !== 'undefined') {
+                syncManager.setUserId(user.mobile);
+            }
             
             // Show the app
             this.showApp();
@@ -2122,6 +2133,22 @@ class ExpenseTrackerApp {
                     }
                     if (data.theme) {
                         localStorage.setItem('theme', data.theme);
+                    }
+
+                    // Sync imported data to Supabase
+                    const budgets = data.budgets || {};
+                    if (typeof syncManager !== 'undefined' && syncManager.online) {
+                        // Mark as initial sync done so it pushes instead of pulls
+                        localStorage.setItem('sync_initial_done', 'true');
+                        syncManager.pushAll(this.expenses, this.incomes, budgets).then(() => {
+                            alert('Successfully imported and synced! App will now refresh.');
+                            window.location.reload();
+                        }).catch(err => {
+                            console.error('Sync after import failed:', err);
+                            alert('Imported but sync failed. App will refresh.');
+                            window.location.reload();
+                        });
+                        return; // Return early, reload happens in promise
                     }
 
                     alert('Successfully imported! App will now refresh.');
