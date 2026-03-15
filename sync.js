@@ -1,11 +1,10 @@
 // sync.js — Supabase Cloud Sync for FinancePro
-// Credentials loaded from config.js (gitignored) or localStorage fallback
-if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_KEY === 'undefined') {
-    var SUPABASE_URL = localStorage.getItem('supabase_url') || '';
-    var SUPABASE_KEY = localStorage.getItem('supabase_key') || '';
-}
+// Credentials loaded from localStorage (first-time setup via pop-up)
+// On first visit, users will be prompted to enter their Supabase URL and API key
+var SUPABASE_URL = localStorage.getItem('supabase_url') || '';
+var SUPABASE_KEY = localStorage.getItem('supabase_key') || '';
 
-// Function to setup Supabase credentials
+// Function to setup Supabase credentials (called from UI)
 function setupSupabaseCredentials() {
     const url = prompt('Sync Setup (1/2): Paste your Supabase Project URL:');
     const key = prompt('Sync Setup (2/2): Paste your Supabase anon key:');
@@ -15,24 +14,27 @@ function setupSupabaseCredentials() {
         SUPABASE_URL = url.trim();
         SUPABASE_KEY = key.trim();
         alert('Supabase credentials saved! Please try again.');
+        location.reload();
     } else {
         alert('Please enter both URL and key.');
     }
 }
 
-// Check if credentials exist, if not prompt
+// Check if credentials exist, if not prompt on first visit
 if (!SUPABASE_URL || !SUPABASE_KEY) {
     setTimeout(() => {
-        const url = prompt('Sync Setup (1/2): Paste your Supabase Project URL:');
+        const url = prompt('Sync Setup (1/2): Paste your Supabase Project URL (e.g., https://xxx.supabase.co):');
+        if (!url) { alert('Supabase URL is required for cloud sync.'); return; }
         const key = prompt('Sync Setup (2/2): Paste your Supabase anon key:');
-        if (url && key) {
-            localStorage.setItem('supabase_url', url.trim());
-            localStorage.setItem('supabase_key', key.trim());
-            SUPABASE_URL = url.trim();
-            SUPABASE_KEY = key.trim();
-            location.reload();
-        }
-    }, 1000);
+        if (!key) { alert('Supabase key is required for cloud sync.'); return; }
+        
+        localStorage.setItem('supabase_url', url.trim());
+        localStorage.setItem('supabase_key', key.trim());
+        SUPABASE_URL = url.trim();
+        SUPABASE_KEY = key.trim();
+        alert('Supabase credentials saved!');
+        location.reload();
+    }, 1500);
 }
 
 class SyncManager {
