@@ -437,6 +437,7 @@ class ExpenseTrackerApp {
         const expYears = this.expenses.map(e => e.date.substring(0,4));
         const incYears = Object.keys(this.incomes).map(ym => ym.substring(0,4));
         const years = [...new Set([...expYears, ...incYears])].sort().reverse();
+        if (years.length === 0) years.push(new Date().getFullYear().toString());
         
         // Only populate if empty so we don't reset user choice
         if (!this.els.dashYearSelect.options.length) {
@@ -568,8 +569,7 @@ class ExpenseTrackerApp {
     }
 
     renderDashboardCharts(yearlyData, dailyDataStore) {
-        const isDark = document.getElementById('app').classList.contains('theme-dark');
-        const textColor = isDark ? '#f1f5f9' : '#2c3e50';
+        const textColor = '#2c3e50';
 
         // Monthly Fixed Expenses Bar Chart
         const barCtx = document.getElementById('dashboardBarChart');
@@ -615,8 +615,7 @@ class ExpenseTrackerApp {
                     legend: { display: false }
                 },
                 scales: {
-                    x: { ticks: { color: textColor }, grid: { display: false } },
-                    y: { ticks: { color: textColor }, grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' } }
+                    y: { ticks: { color: textColor }, grid: { color: 'rgba(0,0,0,0.05)' } }
                 }
             }
         });
@@ -662,8 +661,7 @@ class ExpenseTrackerApp {
                 maintainAspectRatio: false,
                 plugins: { legend: { display: true, position: 'top', labels: { color: textColor, padding: 10 } } },
                 scales: {
-                    x: { ticks: { color: textColor, maxRotation: 0 }, grid: { display: false } },
-                    y: { ticks: { color: textColor }, grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' } }
+                    y: { ticks: { color: textColor }, grid: { color: 'rgba(0,0,0,0.05)' } }
                 }
             }
         });
@@ -1350,9 +1348,8 @@ class ExpenseTrackerApp {
     renderInsights() {
         this.initInsightsFilters();
         const ym = this.getInsightsYM();
-        const isDark = document.getElementById('app').classList.contains('theme-dark');
-        const textColor = isDark ? '#f1f5f9' : '#2c3e50';
-        const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+        const textColor = '#2c3e50';
+        const gridColor = 'rgba(0,0,0,0.05)';
         const curr = this.expenses.filter(e => e.date.startsWith(ym));
 
         // 1. Pie Chart - Major Categories
@@ -1473,9 +1470,8 @@ class ExpenseTrackerApp {
     renderInsightsTrend() {
         const cat = this.els.insTrendCat?.value;
         if(!cat) return;
-        const isDark = document.getElementById('app').classList.contains('theme-dark');
-        const textColor = isDark ? '#f1f5f9' : '#2c3e50';
-        const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+        const textColor = '#2c3e50';
+        const gridColor = 'rgba(0,0,0,0.05)';
 
         const allMonths = [...new Set(this.expenses.map(e=>e.date.substring(0,7)))].sort();
         const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -1532,9 +1528,8 @@ class ExpenseTrackerApp {
             return;
         }
         
-        const isDark = document.getElementById('app').classList.contains('theme-dark');
-        const textColor = isDark ? '#f1f5f9' : '#2c3e50';
-        const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+        const textColor = '#2c3e50';
+        const gridColor = 'rgba(0,0,0,0.05)';
         const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
         
         // Get all years for comparison

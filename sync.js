@@ -35,6 +35,7 @@ class SyncManager {
     }
 
     async req(table, method = 'GET', body = null, query = '') {
+        if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Supabase credentials missing.');
         const url = `${SUPABASE_URL}/rest/v1/${table}${query}`;
         const opts = { method, headers: { ...this.headers } };
         if (method === 'GET') delete opts.headers['Prefer'];
