@@ -601,30 +601,32 @@ body {
         padding: 0.8rem 1rem;
         position: sticky;
         top: 0;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
+        flex-direction: column;
         box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
     .sidebar .logo {
-        margin-bottom: 0;
+        margin-bottom: 0.5rem;
         font-size: 1.2rem;
+        justify-content: center;
     }
     .sidebar .logo i { font-size: 1.5rem; }
     
-    /* Sidebar footer in mobile header */
+    /* Sidebar footer in mobile header - stacked below logo */
     .sidebar-footer {
         display: flex;
         flex-direction: row;
-        gap: 0.8rem;
+        justify-content: center;
+        gap: 0.5rem;
         margin-top: 0;
         padding: 0;
+        flex-wrap: wrap;
     }
     .sidebar-footer .backup-btn {
-        padding: 0.5rem;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.8rem;
     }
     .sidebar-footer .backup-btn span {
-        display: none;
+        display: inline;
     }
     .sidebar-footer #logoutBtn {
         background: #ef4444;
@@ -635,10 +637,10 @@ body {
         gap: 0.3rem;
     }
     #syncIndicator span {
-        display: none;
+        display: inline;
     }
     #syncIndicator {
-        padding: 0.5rem;
+        padding: 0.5rem 0.8rem;
     }
     
     /* Bottom Navigation for Mobile */
