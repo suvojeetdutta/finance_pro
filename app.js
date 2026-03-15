@@ -26,6 +26,9 @@ class ExpenseTrackerApp {
             this.render();
             // Async cloud sync after local init
             this.syncFromCloud();
+        } else {
+            // Show auth screen
+            this.showAuth();
         }
     }
     
