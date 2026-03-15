@@ -24,23 +24,8 @@
     --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.theme-dark {
-    --bg-primary: #0f172a;
-    --bg-secondary: #1e293b;
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --border-color: rgba(255,255,255,0.05);
+/* Dark mode removed per user request */
 
-    --glass-bg: rgba(30, 41, 59, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-
-    --primary-color: #818cf8;
-    --primary-hover: #6366f1;
-    
-    --success-color: #34d399;
-    --success-hover: #10b981;
-}
 
 * {
     margin: 0;
@@ -166,22 +151,8 @@ body {
     background: rgba(99, 102, 241, 0.05);
 }
 
-.theme-toggle {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 1rem 1.2rem;
-    border-radius: 12px;
-    cursor: pointer;
-    color: var(--text-secondary);
-    transition: var(--transition);
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-}
-.theme-toggle:hover {
-    color: var(--text-primary);
-    background: var(--border-color);
-}
+/* theme-toggle styles removed */
+
 
 @media (max-width: 768px) {
     .sidebar-footer {

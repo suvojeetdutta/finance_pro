@@ -10,7 +10,7 @@ class ExpenseTrackerApp {
         this.initData();
         this.initDOM();
         this.bindEvents();
-        this.initTheme();
+
         
         // Render initial view
         this.render();
@@ -263,8 +263,8 @@ class ExpenseTrackerApp {
             });
         });
 
-        // Theme Toggle
-        this.els.themeBtn.addEventListener('click', () => this.toggleTheme());
+        // Theme Toggle Removed
+
 
         // Amount visibility toggle
         document.querySelectorAll('.toggle-visibility').forEach(btn => {
@@ -386,40 +386,8 @@ class ExpenseTrackerApp {
         if (importFileInput) importFileInput.addEventListener('change', (e) => this.importData(e));
     }
 
-    initTheme() {
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        const appContainer = document.getElementById('app');
-        if (savedTheme === 'light') {
-            appContainer.classList.remove('theme-dark');
-            this.els.themeBtn.querySelector('span').textContent = 'Light Mode';
-            this.els.themeBtn.querySelector('i').className = 'fa-solid fa-sun';
-        } else {
-            appContainer.classList.add('theme-dark');
-            this.els.themeBtn.querySelector('span').textContent = 'Dark Mode';
-            this.els.themeBtn.querySelector('i').className = 'fa-solid fa-moon';
-        }
-    }
+    /* Theme methods removed */
 
-    toggleTheme() {
-        const appContainer = document.getElementById('app');
-        const isDark = appContainer.classList.contains('theme-dark');
-        
-        if (isDark) {
-            appContainer.classList.remove('theme-dark');
-            localStorage.setItem('theme', 'light');
-            this.els.themeBtn.querySelector('span').textContent = 'Light Mode';
-            this.els.themeBtn.querySelector('i').className = 'fa-solid fa-sun';
-        } else {
-            appContainer.classList.add('theme-dark');
-            localStorage.setItem('theme', 'dark');
-            this.els.themeBtn.querySelector('span').textContent = 'Dark Mode';
-            this.els.themeBtn.querySelector('i').className = 'fa-solid fa-moon';
-        }
-        
-        if (this.currentView === 'dashboard') {
-            this.renderDashboard();
-        }
-    }
 
     switchView(view) {
         this.currentView = view;
@@ -760,7 +728,7 @@ class ExpenseTrackerApp {
         let html = '';
         Object.keys(grouped).sort((a,b) => a.localeCompare(b)).forEach(date => {
             html += `
-            <div class="date-group expanded">
+            <div class="date-group">
                 <div class="date-divider" onclick="this.parentElement.classList.toggle('expanded')">
                     <i class="fa-regular fa-calendar-days"></i> ${date}
                     <i class="fa-solid fa-chevron-down fold-icon" style="margin-left: auto;"></i>
