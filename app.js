@@ -1169,7 +1169,7 @@ class ExpenseTrackerApp {
     populateSubcategories() {
         const major = this.els.expenseMajor.value;
         const subs = this.subcategories[major] || [];
-        let html = '<option value="">Select Subcategory</option>';
+        let html = '';
         subs.forEach(sub => html += `<option value="${sub}">${sub}</option>`);
         html += '<option value="___ADD_NEW___">+ Add Custom</option>';
         this.els.expenseSub.innerHTML = html;
