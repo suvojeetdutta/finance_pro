@@ -2,7 +2,7 @@
 
 A comprehensive personal finance management application that helps you track expenses, income, budgets, and gain insights into your financial health. Works seamlessly on both desktop and mobile devices.
 
-![Finance Pro Advance](https://img.shields.io/badge/Version-2.0-blue) ![Platform-Web](https://img.shields.io/badge/Platform-Web-green) ![License-MIT-yellow)
+![Finance Pro Advance](https://img.shields.io/badge/Version-2.0-blue) ![Platform-Web](https://img.shields.io/badge/Platform-Web-green) ![License-MIT](https://img.shields.io/badge/License-MIT-yellow)
 
 ## Features
 
