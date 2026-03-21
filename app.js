@@ -1003,7 +1003,8 @@ class ExpenseTrackerApp {
     }
 
     renderDashboardCharts(yearlyData, dailyDataStore) {
-        const textColor = '#2c3e50';
+        const textColor = document.body.classList.contains('dark-mode') ? '#e4e4e7' : '#2c3e50';
+        const gridColor = document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
 
         // Monthly Fixed Expenses Bar Chart
         const barCtx = document.getElementById('dashboardBarChart');
@@ -1774,8 +1775,8 @@ class ExpenseTrackerApp {
     renderInsights() {
         this.initInsightsFilters();
         const ym = this.getInsightsYM();
-        const textColor = '#2c3e50';
-        const gridColor = 'rgba(0,0,0,0.05)';
+        const textColor = document.body.classList.contains('dark-mode') ? '#e4e4e7' : '#2c3e50';
+        const gridColor = document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
         const curr = this.expenses.filter(e => e.date.startsWith(ym));
 
         // 1. Pie Chart - Major Categories
@@ -1907,8 +1908,8 @@ class ExpenseTrackerApp {
     renderInsightsTrend() {
         const cat = this.els.insTrendCat?.value;
         if(!cat) return;
-        const textColor = '#2c3e50';
-        const gridColor = 'rgba(0,0,0,0.05)';
+        const textColor = document.body.classList.contains('dark-mode') ? '#e4e4e7' : '#2c3e50';
+        const gridColor = document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
 
         const allMonths = [...new Set(this.expenses.map(e=>e.date.substring(0,7)))].sort();
         const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -1965,8 +1966,8 @@ class ExpenseTrackerApp {
             return;
         }
         
-        const textColor = '#2c3e50';
-        const gridColor = 'rgba(0,0,0,0.05)';
+        const textColor = document.body.classList.contains('dark-mode') ? '#e4e4e7' : '#2c3e50';
+        const gridColor = document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
         const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
         
         // Get all years for comparison
