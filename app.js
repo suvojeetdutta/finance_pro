@@ -1031,45 +1031,38 @@ class ExpenseTrackerApp {
             }
         });
 
-        // Line Chart
+        // Day-wise Expenses Bar Chart (Monthly Totals)
         const lineCtx = document.getElementById('dashboardLineChart');
         if (this.lineChart) this.lineChart.destroy();
 
-        const days = Array.from({length: 31}, (_, i) => String(i + 1).padStart(2, '0'));
+        // Calculate total day-wise expenses per month
         const monthlyDailyTotals = {};
-        months.forEach(m => monthlyDailyTotals[m] = {});
+        months.forEach(m => monthlyDailyTotals[m] = 0);
 
         yearlyData.forEach(e => {
             if (e.type !== 'Fixed') {
                 const m = e.date.substring(5,7);
-                const d = e.date.substring(8,10);
-                monthlyDailyTotals[m][d] = (monthlyDailyTotals[m][d] || 0) + e.amount;
+                monthlyDailyTotals[m] = (monthlyDailyTotals[m] || 0) + e.amount;
             }
         });
 
-        const lineDatasets = [];
-        months.forEach((m, i) => {
-            if (Object.keys(monthlyDailyTotals[m]).length > 0) {
-                const data = days.map(day => monthlyDailyTotals[m][day] || 0);
-                lineDatasets.push({
-                    label: monthNames[i],
-                    data: data,
-                    backgroundColor: this.getMonthColor(i),
-                    borderRadius: 4
-                });
-            }
-        });
+        const dailyValues = months.map(m => monthlyDailyTotals[m]);
 
         this.lineChart = new Chart(lineCtx, {
             type: 'bar',
             data: {
-                labels: days,
-                datasets: lineDatasets
+                labels: monthNames,
+                datasets: [{
+                    label: 'Day-wise Expenses',
+                    data: dailyValues,
+                    backgroundColor: dailyValues.map((_, i) => this.getMonthColor(i)),
+                    borderRadius: 4
+                }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: true, position: 'top', labels: { color: textColor, padding: 10 } } },
+                plugins: { legend: { display: false } },
                 scales: {
                     y: { ticks: { color: textColor }, grid: { color: 'rgba(0,0,0,0.05)' } }
                 }
