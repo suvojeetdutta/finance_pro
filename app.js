@@ -53,7 +53,9 @@ class ExpenseTrackerApp {
         if (isDark) {
             document.body.classList.add('dark-mode');
             const icon = toggle.querySelector('i');
+            const text = toggle.querySelector('span');
             if (icon) icon.className = 'fa-solid fa-sun';
+            if (text) text.textContent = 'Light Mode';
         }
         
         toggle.addEventListener('click', () => {
@@ -61,7 +63,9 @@ class ExpenseTrackerApp {
             const dark = document.body.classList.contains('dark-mode');
             localStorage.setItem('darkMode', dark);
             const icon = toggle.querySelector('i');
+            const text = toggle.querySelector('span');
             if (icon) icon.className = dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+            if (text) text.textContent = dark ? 'Light Mode' : 'Dark Mode';
             
             // Re-render all charts with new colors
             this.render();
