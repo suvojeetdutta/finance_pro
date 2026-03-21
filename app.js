@@ -1960,7 +1960,8 @@ class ExpenseTrackerApp {
             </div>
         `;
         
-        // 2. Year-over-Year Comparison Chart (only show if 2+ years)
+        // 2. Year-over-Year Comparison Chart - commented out
+        /*
         const yoyChartContainer = document.getElementById('analyticsYoYChart').parentElement;
         if (allYears.length < 2) {
             yoyChartContainer.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-secondary)"><i class="fa-solid fa-chart-column" style="font-size:3rem;margin-bottom:1rem;opacity:0.5"></i><p>Add data from more years to see year-over-year comparison</p></div>';
@@ -1997,6 +1998,7 @@ class ExpenseTrackerApp {
                 }
             });
         }
+        */
         
         // 3. Monthly Spending Trend for Selected Year
         const monthlyData = [];

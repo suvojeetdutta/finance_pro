@@ -108,8 +108,13 @@ class SyncManager {
         const opts = { method, headers: { ...this.headers } };
         if (method === 'GET') delete opts.headers['Prefer'];
         if (body) opts.body = JSON.stringify(body);
+        console.log(`Sync ${method} ${table}:`, url);
         const res = await fetch(url, opts);
-        if (!res.ok) throw new Error(`Sync ${method} ${table}: ${res.status}`);
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error(`Sync error ${res.status}:`, errorText);
+            throw new Error(`Sync ${method} ${table}: ${res.status} - ${errorText}`);
+        }
         return method === 'GET' ? res.json() : null;
     }
 
@@ -170,7 +175,7 @@ class SyncManager {
         };
         if (!this.online) { this.queueOp('upsert_expense', row); return; }
         try { await this.req('expenses', 'POST', [row]); this.updateIndicator('synced'); }
-        catch (e) { this.queueOp('upsert_expense', row); this.updateIndicator('error'); }
+        catch (e) { this.queueOp('upsert_expense', row); this.updateIndicator('error', e.message); }
     }
 
     async softDeleteExpense(id) {
@@ -232,7 +237,7 @@ class SyncManager {
             return { expenses, incomes, budgets };
         } catch (e) {
             console.error('Pull failed:', e);
-            this.updateIndicator('error');
+            this.updateIndicator('error', e.message);
             return null;
         }
     }
@@ -272,7 +277,7 @@ class SyncManager {
             this.updateIndicator('synced');
         } catch (e) {
             console.error('Initial push failed:', e);
-            this.updateIndicator('error');
+            this.updateIndicator('error', e.message);
         }
     }
 
@@ -304,7 +309,7 @@ class SyncManager {
 
     // ---- UI indicator ----
 
-    updateIndicator(status) {
+    updateIndicator(status, errorMsg = null) {
         const el = document.getElementById('syncIndicator');
         if (!el) return;
         const map = {
@@ -317,6 +322,12 @@ class SyncManager {
         const s = map[status] || map.error;
         el.className = `sync-indicator ${s.cls}`;
         el.innerHTML = `<i class="fa-solid ${s.icon}"></i><span>${s.text}</span>`;
+        
+        // Show error message in a tooltip or alert
+        if (status === 'error' && errorMsg) {
+            console.error('Sync error details:', errorMsg);
+            el.title = errorMsg; // Tooltip showing full error
+        }
     }
 }
 
