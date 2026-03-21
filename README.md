@@ -111,7 +111,7 @@ A comprehensive personal finance management application that helps you track exp
 ## Project Structure
 
 ```
-expense_tracker_advance/
+finance_pro/
 ├── index.html          # Main HTML file
 ├── app.js              # Core application logic
 ├── styles.css          # Styling (responsive)
