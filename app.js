@@ -1054,15 +1054,14 @@ class ExpenseTrackerApp {
                 lineDatasets.push({
                     label: monthNames[i],
                     data: data,
-                    borderColor: this.getMonthColor(i),
-                    backgroundColor: 'transparent',
-                    tension: 0.4
+                    backgroundColor: this.getMonthColor(i),
+                    borderRadius: 4
                 });
             }
         });
 
         this.lineChart = new Chart(lineCtx, {
-            type: 'line',
+            type: 'bar',
             data: {
                 labels: days,
                 datasets: lineDatasets
