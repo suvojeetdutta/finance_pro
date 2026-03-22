@@ -664,6 +664,7 @@ body {
     overflow: visible !important;
     position: relative;
     isolation: isolate;
+    z-index: 10;
 }
 .search-input-wrapper {
     position: relative;
