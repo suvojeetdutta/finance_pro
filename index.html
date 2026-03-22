@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="libs/fontawesome/all.min.css">
     <script src="libs/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
     <style>
         .item-actions { display: flex; gap: 8px; opacity: 0; transition: opacity 0.2s; }
         .history-item:hover .item-actions { opacity: 1; }
@@ -345,6 +346,11 @@
                 <!-- Dashboard View -->
                 <div id="dashboardView" class="view active">
                     <div class="glass-card filters-card">
+                        <div class="filter-group search-group">
+                            <label><i class="fa-solid fa-search"></i> Search</label>
+                            <input type="text" id="dashSearchInput" placeholder="Search subcategory or description..." autocomplete="off">
+                            <div id="dashSearchResults" class="search-results-dropdown"></div>
+                        </div>
                         <div class="filter-group">
                             <label>Year</label>
                             <select id="dashYearSelect"></select>
@@ -433,6 +439,11 @@
                 <!-- History View -->
                 <div id="historyView" class="view">
                     <div class="glass-card filters-card">
+                        <div class="filter-group search-group">
+                            <label><i class="fa-solid fa-search"></i> Search</label>
+                            <input type="text" id="historySearchInput" placeholder="Search subcategory or description..." autocomplete="off">
+                            <div id="historySearchResults" class="search-results-dropdown"></div>
+                        </div>
                         <div class="filter-group">
                             <label>Year</label>
                             <select id="historyYearSelect"></select>

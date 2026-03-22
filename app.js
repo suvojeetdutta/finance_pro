@@ -33,6 +33,9 @@ class ExpenseTrackerApp {
         // Initialize dark mode
         this.initDarkMode();
         
+        // Initialize search
+        this.initSearch();
+        
         // Initialize authentication
         this.initAuth();
         
@@ -95,6 +98,147 @@ class ExpenseTrackerApp {
             // Re-render all charts with new colors (use window.expenseApp to ensure correct context)
             if (window.expenseApp) window.expenseApp.render();
         };
+    }
+    
+    // Search Methods
+    initSearch() {
+        // Get search input elements
+        this.dashSearchInput = document.getElementById('dashSearchInput');
+        this.dashSearchResults = document.getElementById('dashSearchResults');
+        this.historySearchInput = document.getElementById('historySearchInput');
+        this.historySearchResults = document.getElementById('historySearchResults');
+        
+        // Initialize Fuse.js for fuzzy search (if expenses exist)
+        if (this.expenses && this.expenses.length > 0) {
+            this.initFuse();
+        }
+        
+        // Dashboard search events
+        if (this.dashSearchInput) {
+            this.dashSearchInput.addEventListener('input', (e) => this.handleSearch(e, 'dashboard'));
+            this.dashSearchInput.addEventListener('focus', (e) => this.handleSearch(e, 'dashboard'));
+            this.dashSearchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.performFullSearch('dashboard');
+            });
+        }
+        
+        // History search events
+        if (this.historySearchInput) {
+            this.historySearchInput.addEventListener('input', (e) => this.handleSearch(e, 'history'));
+            this.historySearchInput.addEventListener('focus', (e) => this.handleSearch(e, 'history'));
+            this.historySearchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.performFullSearch('history');
+            });
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-group')) {
+                this.dashSearchResults?.classList.remove('active');
+                this.historySearchResults?.classList.remove('active');
+            }
+        });
+    }
+    
+    initFuse() {
+        if (!this.expenses || this.expenses.length === 0) {
+            this.fuse = null;
+            return;
+        }
+        const options = {
+            includeScore: true,
+            threshold: 0.4,
+            keys: ['sub', 'desc', 'description', 'major']
+        };
+        this.fuse = new Fuse(this.expenses, options);
+    }
+    
+    handleSearch(e, view) {
+        const query = e.target.value.trim();
+        const resultsContainer = view === 'dashboard' ? this.dashSearchResults : this.historySearchResults;
+        
+        if (!query) {
+            resultsContainer?.classList.remove('active');
+            return;
+        }
+        
+        // Ensure fuse is initialized
+        if (!this.fuse) {
+            this.initFuse();
+        }
+        
+        // Perform fuzzy search
+        const results = this.fuse.search(query).slice(0, 10);
+        this.displaySearchResults(results, resultsContainer);
+    }
+    
+    performFullSearch(view) {
+        const input = view === 'dashboard' ? this.dashSearchInput : this.historySearchInput;
+        const query = input.value.trim();
+        
+        if (!query) return;
+        
+        // Ensure fuse is initialized
+        if (!this.fuse) {
+            this.initFuse();
+        }
+        
+        // Get more results for full search
+        const results = this.fuse.search(query).slice(0, 50);
+        
+        // Navigate to history view with search results
+        if (view === 'dashboard') {
+            this.switchView('history');
+            this.filterHistoryBySearch(results.map(r => r.item));
+        } else {
+            this.filterHistoryBySearch(results.map(r => r.item));
+        }
+        
+        // Close dropdown
+        const resultsContainer = view === 'dashboard' ? this.dashSearchResults : this.historySearchResults;
+        resultsContainer?.classList.remove('active');
+    }
+    
+    displaySearchResults(results, container) {
+        if (!container) return;
+        
+        if (results.length === 0) {
+            container.innerHTML = '<div class="search-result-item"><span>No results found</span></div>';
+            container.classList.add('active');
+            return;
+        }
+        
+        container.innerHTML = results.map(result => {
+            const item = result.item;
+            return `
+                <div class="search-result-item" onclick="window.expenseApp.viewExpenseDetail('${item.id}')">
+                    <div class="search-result-info">
+                        <span class="search-result-subcategory">${item.sub || item.major}</span>
+                        <span class="search-result-description">${item.desc || item.description || '-'}</span>
+                    </div>
+                    <div class="search-result-meta">
+                        <span class="search-result-amount">₹${parseFloat(item.amount).toLocaleString('en-IN')}</span>
+                        <span class="search-result-date">${item.date || item.expense_date}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        container.classList.add('active');
+    }
+    
+    filterHistoryBySearch(items) {
+        // Update history list with search results
+        this.currentView = 'history';
+        this.renderHistory(items);
+    }
+    
+    viewExpenseDetail(id) {
+        const expense = this.expenses.find(e => e.id === id);
+        if (!expense) return;
+        
+        // Could open a modal or navigate to the expense
+        alert(`Expense: ${expense.sub}\nAmount: ₹${expense.amount}\nDate: ${expense.date || expense.expense_date}\nDescription: ${expense.desc || expense.description}`);
     }
     
     // Authentication Methods
@@ -483,6 +627,8 @@ class ExpenseTrackerApp {
             });
             this.expenses = merged;
             localStorage.setItem('expenses', JSON.stringify(this.expenses));
+            // Update search index
+            this.initFuse();
         }
 
         // Merge incomes
@@ -616,6 +762,9 @@ class ExpenseTrackerApp {
                 this.subcategories[major] = [...new Set([...this.subcategories[major], ...customSubs[major]])];
             }
         });
+        
+        // Initialize Fuse.js for search
+        this.initFuse();
     }
 
     initDOM() {
@@ -1272,6 +1421,8 @@ class ExpenseTrackerApp {
         }
 
         localStorage.setItem("expenses", JSON.stringify(this.expenses));
+        // Update search index
+        this.initFuse();
         // Sync to cloud
         const saved = id ? this.expenses.find(e => e.id == id) : this.expenses[this.expenses.length - 1];
         if (saved && typeof syncManager !== 'undefined') syncManager.pushExpense(saved);
@@ -1283,6 +1434,8 @@ class ExpenseTrackerApp {
         if (!confirm('Are you sure you want to delete this expense?')) return;
         this.expenses = this.expenses.filter(e => e.id != id);
         localStorage.setItem("expenses", JSON.stringify(this.expenses));
+        // Update search index
+        this.initFuse();
         if (typeof syncManager !== 'undefined') syncManager.softDeleteExpense(id);
         this.render();
     }
@@ -2294,6 +2447,9 @@ class ExpenseTrackerApp {
                     // Save to localStorage
                     localStorage.setItem('expenses', JSON.stringify(this.expenses));
                     localStorage.setItem('expense-tracker-incomes', JSON.stringify(this.incomes));
+                    
+                    // Update search index
+                    this.initFuse();
                     
                     if (data.budgets) {
                         localStorage.setItem('expense-tracker-budgets', JSON.stringify(data.budgets));
