@@ -217,6 +217,7 @@ class ExpenseTrackerApp {
         if (results.length === 0) {
             container.innerHTML = '<div class="search-result-item"><span>No results found</span></div>';
             container.classList.add('active');
+            this.positionSearchDropdown(container);
             return;
         }
         
@@ -237,6 +238,21 @@ class ExpenseTrackerApp {
         }).join('');
         
         container.classList.add('active');
+        this.positionSearchDropdown(container);
+    }
+    
+    positionSearchDropdown(container) {
+        // Get the parent search input
+        const searchInput = container.parentElement?.querySelector('input');
+        if (!searchInput) return;
+        
+        const inputRect = searchInput.getBoundingClientRect();
+        
+        // Position dropdown below the search input
+        container.style.top = (inputRect.bottom + 5) + 'px';
+        container.style.left = inputRect.left + 'px';
+        container.style.width = inputRect.width + 'px';
+        container.style.maxWidth = (window.innerWidth - 40) + 'px';
     }
     
     filterHistoryBySearch(items) {
