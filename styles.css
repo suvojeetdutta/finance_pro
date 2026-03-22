@@ -650,6 +650,8 @@ body {
 .search-group {
     position: relative;
     flex: 2;
+    z-index: 99999;
+    transform: none !important;
 }
 .search-input-wrapper {
     position: relative;

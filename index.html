@@ -350,7 +350,7 @@
                             <label><i class="fa-solid fa-search"></i> Search</label>
                             <div class="search-input-wrapper">
                                 <input type="text" id="dashSearchInput" placeholder="Search subcategory or description..." autocomplete="off">
-                                <button class="search-btn" id="dashSearchBtn" title="Search"><i class="fa-solid fa-arrow-right"></i></button>
+                                <button class="search-btn" id="dashSearchBtn" title="Search" onclick="window.expenseApp && window.expenseApp.performFullSearch('dashboard')"><i class="fa-solid fa-arrow-right"></i></button>
                             </div>
                             <div id="dashSearchResults" class="search-results-dropdown"></div>
                         </div>
@@ -446,7 +446,7 @@
                             <label><i class="fa-solid fa-search"></i> Search</label>
                             <div class="search-input-wrapper">
                                 <input type="text" id="historySearchInput" placeholder="Search subcategory or description..." autocomplete="off">
-                                <button class="search-btn" id="historySearchBtn" title="Search"><i class="fa-solid fa-arrow-right"></i></button>
+                                <button class="search-btn" id="historySearchBtn" title="Search" onclick="window.expenseApp && window.expenseApp.performFullSearch('history')"><i class="fa-solid fa-arrow-right"></i></button>
                             </div>
                             <div id="historySearchResults" class="search-results-dropdown"></div>
                         </div>
