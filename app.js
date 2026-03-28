@@ -2832,6 +2832,37 @@ class ExpenseTrackerApp {
         }
     }
 
+    async shareData() {
+        try {
+            const data = {
+                expenses: this.expenses,
+                incomes: this.incomes,
+                budgets: JSON.parse(localStorage.getItem('expense-tracker-budgets') || '{}'),
+                theme: localStorage.getItem('theme') || 'light',
+                exportDate: new Date().toISOString(),
+                app: 'FinancePro'
+            };
+
+            const jsonStr = JSON.stringify(data, null, 2);
+            const dateStr = new Date().toISOString().split('T')[0];
+            const file = new File([jsonStr], `finance_pro_backup_${dateStr}.json`, { type: 'application/json' });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    title: 'FinancePro Backup',
+                    files: [file]
+                });
+            } else {
+                alert('Your browser does not support native file sharing. Please use Export instead.');
+            }
+        } catch (err) {
+            console.error('Share failed:', err);
+            if (err.name !== 'AbortError') {
+                alert('Share failed: ' + err.message);
+            }
+        }
+    }
+
     importData(event) {
         const file = event.target.files[0];
         if (!file) return;
