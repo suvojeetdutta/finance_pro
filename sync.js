@@ -273,12 +273,42 @@ class SyncManager {
             // Budgets
             if (budgets && Object.keys(budgets).length) await this.pushBudgets(budgets);
 
+            // Subcategory config
+            await this.pushSubcatConfig();
+
             localStorage.setItem('sync_initial_done', 'true');
             this.updateIndicator('synced');
         } catch (e) {
             console.error('Initial push failed:', e);
             this.updateIndicator('error', e.message);
         }
+    }
+
+    // ---- Subcategory Config Sync ----
+
+    async pushSubcatConfig() {
+        const userId = this.getUserId();
+        if (!userId) return;
+        const row = {
+            user_id: userId,
+            custom_subcategories: JSON.parse(localStorage.getItem('customSubcategories') || '{}'),
+            rename_mappings: JSON.parse(localStorage.getItem('subcatRenameMappings') || '{}'),
+            deleted_subcategories: JSON.parse(localStorage.getItem('deletedSubcategories') || '{}'),
+            updated_at: new Date().toISOString()
+        };
+        if (!this.online) { this.queueOp('upsert_subcat_config', row); return; }
+        try { await this.req('subcategory_config', 'POST', [row]); this.updateIndicator('synced'); }
+        catch (e) { this.queueOp('upsert_subcat_config', row); console.error('Subcat config sync failed:', e); }
+    }
+
+    async pullSubcatConfig() {
+        const userId = this.getUserId();
+        if (!userId || !this.online) return null;
+        try {
+            const rows = await this.req('subcategory_config', 'GET', null, `?user_id=eq.${userId}`);
+            if (rows && rows.length > 0) return rows[0];
+        } catch (e) { console.error('Pull subcat config failed:', e); }
+        return null;
     }
 
     // ---- Offline queue ----
@@ -300,7 +330,8 @@ class SyncManager {
                 if (op.type === 'upsert_expense') await this.req('expenses', 'POST', [op.data]);
                 else if (op.type === 'delete_expense') await this.req('expenses', 'PATCH', { deleted: true, updated_at: op.data.updated_at }, `?id=eq.${op.data.id}&user_id=eq.${userId}`);
                 else if (op.type === 'upsert_income') await this.req('incomes', 'POST', [op.data]);
-                else if (op.type === 'delete_income') await this.req('incomes', 'PATCH', { deleted: true, updated_at: op.data.updated_at }, `?id=eq.${op.data.id}&user_id=eq.${userId}`);
+                else if (op.type === 'delete_income') await this.req('incomes', 'PATCH', { deleted: true, updated_at: op.data.updated_at }, `?id=eq.${String(op.data.id)}&user_id=eq.${userId}`);
+                else if (op.type === 'upsert_subcat_config') await this.req('subcategory_config', 'POST', [op.data]);
             } catch (e) { this.pendingOps.push(op); }
         }
         localStorage.setItem('sync_pending', JSON.stringify(this.pendingOps));

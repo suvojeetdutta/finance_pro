@@ -733,6 +733,18 @@ class ExpenseTrackerApp {
             localStorage.setItem('expense-tracker-budgets', JSON.stringify(budgets));
         }
 
+        // Merge subcategory config from cloud
+        if (typeof syncManager !== 'undefined') {
+            const subcatConfig = await syncManager.pullSubcatConfig();
+            if (subcatConfig) {
+                localStorage.setItem('customSubcategories', JSON.stringify(subcatConfig.custom_subcategories || {}));
+                localStorage.setItem('subcatRenameMappings', JSON.stringify(subcatConfig.rename_mappings || {}));
+                localStorage.setItem('deletedSubcategories', JSON.stringify(subcatConfig.deleted_subcategories || {}));
+                // Reinitialize subcategories from the updated config
+                this.reloadSubcategories();
+            }
+        }
+
         this.render();
     }
 
@@ -819,6 +831,13 @@ class ExpenseTrackerApp {
         }
 
         // Preload customized subcategories
+        this.reloadSubcategories();
+        
+        // Initialize Fuse.js for search
+        this.initFuse();
+    }
+
+    reloadSubcategories() {
         this.subcategories = typeof SUBCATEGORIES !== 'undefined' ? {...SUBCATEGORIES} : {
             "Need": ["Housing", "Parents Expenses", "Utilities", "Subscriptions & Fees", "Groceries", "Health & Medicine", "Grooming", "Transport", "Recharge", "Other"],
             "Want": ["Dining", "Habits", "Subscriptions", "Snacks", "Misc", "Shopping", "Entertainment", "Gifts"],
@@ -862,9 +881,6 @@ class ExpenseTrackerApp {
                 this.subcategories[major] = this.subcategories[major].filter(s => !deletedSubs[major].includes(s));
             }
         });
-        
-        // Initialize Fuse.js for search
-        this.initFuse();
     }
 
     initDOM() {
@@ -1719,6 +1735,8 @@ class ExpenseTrackerApp {
             }
         });
         localStorage.setItem('expenses', JSON.stringify(this.expenses));
+        
+        if (typeof syncManager !== 'undefined') syncManager.pushSubcatConfig();
 
         // Update search index
         if (this.initFuse) this.initFuse();
@@ -1759,6 +1777,8 @@ class ExpenseTrackerApp {
         if (!deletedSubs[major].includes(subName)) deletedSubs[major].push(subName);
         localStorage.setItem('deletedSubcategories', JSON.stringify(deletedSubs));
 
+        if (typeof syncManager !== 'undefined') syncManager.pushSubcatConfig();
+
         // Refresh the modal
         this.openSubcatModal();
 
@@ -1786,6 +1806,8 @@ class ExpenseTrackerApp {
         if (!customSubs[major]) customSubs[major] = [];
         customSubs[major].push(newName);
         localStorage.setItem('customSubcategories', JSON.stringify(customSubs));
+
+        if (typeof syncManager !== 'undefined') syncManager.pushSubcatConfig();
 
         // Refresh the modal
         this.openSubcatModal();

@@ -68,3 +68,16 @@ CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(expense_date);
 CREATE INDEX IF NOT EXISTS idx_incomes_user_id ON incomes(user_id);
 CREATE INDEX IF NOT EXISTS idx_incomes_month ON incomes(month_key);
 CREATE INDEX IF NOT EXISTS idx_budgets_user_id ON budgets(user_id);
+
+-- Subcategory config table (stores rename mappings, deletions, custom additions per user)
+CREATE TABLE IF NOT EXISTS subcategory_config (
+  user_id text PRIMARY KEY REFERENCES users(mobile) ON DELETE CASCADE,
+  custom_subcategories jsonb default '{}',
+  rename_mappings jsonb default '{}',
+  deleted_subcategories jsonb default '{}',
+  updated_at timestamptz default now()
+);
+
+ALTER TABLE subcategory_config ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_all" ON subcategory_config;
+CREATE POLICY "anon_all" ON subcategory_config FOR ALL USING (true) WITH CHECK (true);
