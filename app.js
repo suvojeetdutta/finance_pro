@@ -1605,6 +1605,18 @@ class ExpenseTrackerApp {
 
     /* ---------------- Subcategory Management ---------------- */
     openSubcatModal() {
+        // Close mobile menu if open
+        if (this.els.sidebar && this.els.sidebar.classList.contains('mobile-menu-open')) {
+            this.els.sidebar.classList.remove('mobile-menu-open');
+            if (this.els.mobileMenuBtn) {
+                const icon = this.els.mobileMenuBtn.querySelector('i');
+                if (icon) {
+                    icon.classList.remove('fa-xmark');
+                    icon.classList.add('fa-bars');
+                }
+            }
+        }
+
         const body = this.els.subcatModalBody;
         if (!body) return;
 
