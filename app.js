@@ -881,6 +881,28 @@ class ExpenseTrackerApp {
                 this.subcategories[major] = this.subcategories[major].filter(s => !deletedSubs[major].includes(s));
             }
         });
+
+        // AUTO-RECOVERY: Scan all existing expenses and ensure their subcategories exist
+        if (this.expenses && Array.isArray(this.expenses)) {
+            let recoveredAny = false;
+            this.expenses.forEach(e => {
+                if (e.major && e.sub && this.subcategories[e.major]) {
+                    // If subcat doesn't exist and wasn't explicitly deleted, add it back
+                    if (!this.subcategories[e.major].includes(e.sub) && (!deletedSubs[e.major] || !deletedSubs[e.major].includes(e.sub))) {
+                        this.subcategories[e.major].push(e.sub);
+                        if (!customSubs[e.major]) customSubs[e.major] = [];
+                        if (!customSubs[e.major].includes(e.sub)) customSubs[e.major].push(e.sub);
+                        recoveredAny = true;
+                    }
+                }
+            });
+
+            // If we found and recovered missing subcategories, save and push
+            if (recoveredAny) {
+                localStorage.setItem("customSubcategories", JSON.stringify(customSubs));
+                if (typeof syncManager !== 'undefined') syncManager.pushSubcatConfig();
+            }
+        }
     }
 
     initDOM() {
