@@ -2845,19 +2845,27 @@ class ExpenseTrackerApp {
 
             const jsonStr = JSON.stringify(data, null, 2);
             const dateStr = new Date().toISOString().split('T')[0];
-            const file = new File([jsonStr], `finance_pro_backup_${dateStr}.json`, { type: 'application/json' });
+            
+            // OS share sheets block .json files for security. Using .txt bypasses this.
+            const file = new File([jsonStr], `finance_pro_backup_${dateStr}.txt`, { type: 'text/plain' });
 
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 await navigator.share({
                     title: 'FinancePro Backup',
                     files: [file]
                 });
+            } else if (navigator.share) {
+                // Fallback for browsers that support share but not file sharing (like some PC browsers)
+                await navigator.share({
+                    title: 'FinancePro Backup',
+                    text: 'FinancePro JSON Backup Data:\n\n' + jsonStr
+                });
             } else {
-                alert('Your browser does not support native file sharing. Please use Export instead.');
+                alert('Your browser does not support native file sharing. Please use the standard Export button instead.');
             }
         } catch (err) {
             console.error('Share failed:', err);
-            if (err.name !== 'AbortError') {
+            if (err.name !== 'AbortError' && err.message !== 'Share canceled') {
                 alert('Share failed: ' + err.message);
             }
         }
