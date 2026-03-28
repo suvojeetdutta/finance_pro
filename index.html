@@ -300,7 +300,7 @@
             </ul>
 
             <div class="sidebar-footer">
-                <button class="backup-btn" id="manageSubcatsBtn" title="Manage Subcategories">
+                <button class="backup-btn" id="manageSubcatsBtn" title="Manage Subcategories" onclick="window.expenseApp && window.expenseApp.openSubcatModal()">
                     <i class="fa-solid fa-tags"></i>
                     <span>Categories</span>
                 </button>
@@ -759,7 +759,7 @@
             <div class="glass-modal" style="max-width: 560px;">
                 <div class="modal-header">
                     <h2><i class="fa-solid fa-tags"></i> Manage Subcategories</h2>
-                    <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="close-modal" onclick="document.getElementById('subcatModal').classList.remove('show')"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="modal-body" id="subcatModalBody" style="max-height: 65vh; overflow-y: auto; padding-right: 10px;">
                     <!-- Populated dynamically -->
