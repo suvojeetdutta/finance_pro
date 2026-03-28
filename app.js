@@ -937,7 +937,7 @@ class ExpenseTrackerApp {
             insYearSelect: document.getElementById('insightsYearSelect'),
             insMonthSelect: document.getElementById('insightsMonthSelect'),
             insSubFilter: document.getElementById('insightsSubFilter'),
-            insTrendCat: document.getElementById('insightsTrendCat'),
+            analyticsTrendCat: document.getElementById('analyticsTrendCat'),
             
             // Budget Editing
             budgetModal: document.getElementById('budgetModal'),
@@ -2333,7 +2333,6 @@ class ExpenseTrackerApp {
             });
             this.els.insMonthSelect.addEventListener('change', () => this.renderInsights());
             if(this.els.insSubFilter) this.els.insSubFilter.addEventListener('change', () => this.renderInsights());
-            if(this.els.insTrendCat) this.els.insTrendCat.addEventListener('change', () => this.renderInsightsTrend());
         }
     }
 
@@ -2493,27 +2492,25 @@ class ExpenseTrackerApp {
                 <td>${e.desc||'-'}</td><td class="amt-col">₹${e.amount.toLocaleString()}</td>
             </tr>`).join('')}</tbody>
         `;
-
-        // 6. Trend chart - populate selector & render
-        const uniqueSubs = [...new Set(this.expenses.map(e=>e.sub))].sort();
-        const currentVal = this.els.insTrendCat?.value;
-        this.els.insTrendCat.innerHTML = uniqueSubs.map(s => `<option value="${s}" ${s===currentVal?'selected':''}>${s}</option>`).join('');
-        this.renderInsightsTrend();
     }
 
-    renderInsightsTrend() {
-        const cat = this.els.insTrendCat?.value;
+    renderAnalyticsTrend() {
+        const cat = this.els.analyticsTrendCat?.value;
         if(!cat) return;
         const textColor = document.body.classList.contains('dark-mode') ? '#e4e4e7' : '#2c3e50';
         const gridColor = document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
 
-        const allMonths = [...new Set(this.expenses.map(e=>e.date.substring(0,7)))].sort();
+        // Use selected year if available to scope the trend
+        const year = document.getElementById('analyticsYearSelect')?.value;
+        const relevantExpenses = year ? this.expenses.filter(e => e.date.startsWith(year)) : this.expenses;
+
+        const allMonths = [...new Set(relevantExpenses.map(e=>e.date.substring(0,7)))].sort();
         const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
         const labels = allMonths.map(m => monthNames[parseInt(m.split('-')[1])-1] + ' ' + m.split('-')[0].slice(2));
-        const data = allMonths.map(m => this.expenses.filter(e=>e.date.startsWith(m) && e.sub===cat).reduce((s,e)=>s+e.amount,0));
+        const data = allMonths.map(m => relevantExpenses.filter(e=>e.date.startsWith(m) && e.sub===cat).reduce((s,e)=>s+e.amount,0));
 
         this.destroyChart('trend');
-        this.insCharts.trend = new Chart(document.getElementById('insightsTrendChart'), {
+        this.insCharts.trend = new Chart(document.getElementById('analyticsTrendChart'), {
             type: 'line',
             data: {
                 labels,
@@ -2551,6 +2548,11 @@ class ExpenseTrackerApp {
         }
         this._analyticsYearChange = () => this.renderAnalytics();
         yearSelect.addEventListener('change', this._analyticsYearChange);
+
+        if (this.els.analyticsTrendCat && !this._analyticsTrendBound) {
+            this.els.analyticsTrendCat.addEventListener('change', () => this.renderAnalyticsTrend());
+            this._analyticsTrendBound = true;
+        }
     }
 
     renderAnalytics() {
@@ -2769,6 +2771,14 @@ class ExpenseTrackerApp {
                 }
             }
         });
+
+        // 5. Trend chart - populate selector & render
+        if (this.els.analyticsTrendCat) {
+            const uniqueSubs = [...new Set(yearExp.map(e=>e.sub))].sort();
+            const currentVal = this.els.analyticsTrendCat.value;
+            this.els.analyticsTrendCat.innerHTML = uniqueSubs.map(s => `<option value="${s}" ${s===currentVal?'selected':''}>${s}</option>`).join('');
+            this.renderAnalyticsTrend();
+        }
     }
 
     prefillModalDate(inputId) {
